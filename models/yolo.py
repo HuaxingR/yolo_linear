@@ -10,6 +10,7 @@ import argparse
 import sys
 from copy import deepcopy
 from pathlib import Path
+from torchsummary import summary
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -28,17 +29,6 @@ try:
     import thop  # for FLOPs computation
 except ImportError:
     thop = None
-
-######### added a linear regression layer
-class LinearRegression(torch.nn.Module):
-
-    def __init__(self):
-        super(LinearRegression, self).__init__()
-        self.linear = torch.nn.Linear(1, 1)  # One in and one out
-
-    def forward(self, x):
-        y_pred = self.linear(x)
-        return y_pred
 
 
 class Detect(nn.Module):
@@ -258,7 +248,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
 
     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
-    for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
+    for i, (f, n, m, args) in enumerate(d['backbone']):  # from, number, module, args
         m = eval(m) if isinstance(m, str) else m  # eval strings
         for j, a in enumerate(args):
             try:
@@ -277,6 +267,10 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             if m in [BottleneckCSP, C3, C3TR, C3Ghost]:
                 args.insert(2, n)  # number of repeats
                 n = 1
+        elif m in [LinearRegression]:
+            c1, c2 = args[0], args[1]
+        elif m is nn.Linear:
+            c1, c2 = args[0], args[1]
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
         elif m is Concat:
@@ -289,8 +283,6 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             c2 = ch[f] * args[0] ** 2
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
-        elif m is LinearRegression:
-            c2 = sum(ch[x] for x in f) ### not sure#### added
         else:
             c2 = ch[f]
 
@@ -321,6 +313,8 @@ if __name__ == '__main__':
     # Create model
     model = Model(opt.cfg).to(device)
     model.train()
+
+
 
     # Profile
     if opt.profile:

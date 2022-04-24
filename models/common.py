@@ -194,7 +194,10 @@ class SPPF(nn.Module):
             warnings.simplefilter('ignore')  # suppress torch 1.9.0 max_pool2d() warning
             y1 = self.m(x)
             y2 = self.m(y1)
-            return self.cv2(torch.cat([x, y1, y2, self.m(y2)], 1))
+            temp = torch.cat([x, y1, y2, self.m(y2)], 1)
+            temp_result = self.cv2(torch.cat([x, y1, y2, self.m(y2)], 1))
+            s = torch.flatten(temp_result, start_dim=1)
+            return s
 
 
 class Focus(nn.Module):
@@ -274,6 +277,16 @@ class Concat(nn.Module):
     def forward(self, x):
         return torch.cat(x, self.d)
 
+######### added a linear regression layer
+class LinearRegression(torch.nn.Module):
+
+    def __init__(self):
+        super(LinearRegression, self).__init__()
+        self.linear = torch.nn.Linear(524288, 1)  # 32*32*512 in and one out
+
+    def forward(self, x):
+        y_pred = self.linear(x)
+        return y_pred
 
 class DetectMultiBackend(nn.Module):
     # YOLOv5 MultiBackend class for python inference on various backends
