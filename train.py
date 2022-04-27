@@ -319,15 +319,15 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             imgs = imgs.to(device, non_blocking=True).float() / 255  # uint8 to float32, 0-255 to 0.0-1.0
             # print("number of lables", number_labels)
             # Warmup
-            if ni <= nw:
-                xi = [0, nw]  # x interp
-                # compute_loss.gr = np.interp(ni, xi, [0.0, 1.0])  # iou loss ratio (obj_loss = 1.0 or iou)
-                accumulate = max(1, np.interp(ni, xi, [1, nbs / batch_size]).round())
-                for j, x in enumerate(optimizer.param_groups):
-                    # bias lr falls from 0.1 to lr0, all other lrs rise from 0.0 to lr0
-                    x['lr'] = np.interp(ni, xi, [hyp['warmup_bias_lr'] if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
-                    if 'momentum' in x:
-                        x['momentum'] = np.interp(ni, xi, [hyp['warmup_momentum'], hyp['momentum']])
+            # if ni <= nw:
+            #     xi = [0, nw]  # x interp
+            #     # compute_loss.gr = np.interp(ni, xi, [0.0, 1.0])  # iou loss ratio (obj_loss = 1.0 or iou)
+            #     accumulate = max(1, np.interp(ni, xi, [1, nbs / batch_size]).round())
+            #     for j, x in enumerate(optimizer.param_groups):
+            #         # bias lr falls from 0.1 to lr0, all other lrs rise from 0.0 to lr0
+            #         x['lr'] = np.interp(ni, xi, [hyp['warmup_bias_lr'] if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
+            #         if 'momentum' in x:
+            #             x['momentum'] = np.interp(ni, xi, [hyp['warmup_momentum'], hyp['momentum']])
 
 
 ########### huaxing comment
@@ -396,18 +396,18 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             callbacks.run('on_train_epoch_end', epoch=epoch)
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = (epoch + 1 == epochs) or stopper.possible_stop
-            if not noval or final_epoch:  # Calculate mAP
-                results, maps, _ = val.run(data_dict,
-                                           batch_size=batch_size // WORLD_SIZE * 2,
-                                           imgsz=1024,
-                                           model=ema.ema,
-                                           single_cls=single_cls,
-                                           dataloader=val_loader,
-                                           save_dir=save_dir,
-                                           plots=False,
-                                           callbacks=callbacks,
-                                           compute_loss=None)
-
+###########commnet by huaxing            # if not noval or final_epoch:  # Calculate mAP
+            #     results, maps, _ = val.run(data_dict,
+            #                                batch_size=batch_size // WORLD_SIZE * 2,
+            #                                imgsz=1024,
+            #                                model=ema.ema,
+            #                                single_cls=single_cls,
+            #                                dataloader=val_loader,
+            #                                save_dir=save_dir,
+            #                                plots=False,
+            #                                callbacks=callbacks,
+            #                                compute_loss=None)
+############### comment ends
 ###########huaxing commented
             # Update best mAP
             # fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
@@ -434,11 +434,13 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 #     torch.save(ckpt, best) ######### huaxing comment
                 if (epoch > 0) and (opt.save_period > 0) and (epoch % opt.save_period == 0):
                     torch.save(ckpt, w / f'epoch{epoch}.pt')
-                del ckpt
-                callbacks.run('on_model_save', last, epoch, final_epoch, best_fitness, fi)
 
+########huaxing comments
+                # del ckpt
+                # callbacks.run('on_model_save', last, epoch, final_epoch, best_fitness) #### huaxing deleted: , fi
+################## comments end
             # Stop Single-GPU
-            if RANK == -1 and stopper(epoch=epoch, fitness=fi):
+            if RANK == -1: ### huaxing deleted: and stopper(epoch=epoch, fitness=fi)
                 break
 
             # Stop DDP TODO: known issues shttps://github.com/ultralytics/yolov5/pull/4576
@@ -474,10 +476,10 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                             callbacks=callbacks,
                                             compute_loss=None)  # val best model with plots
                     if is_coco:
-                        callbacks.run('on_fit_epoch_end', list(loss) + list(results) + lr, epoch, best_fitness, fi)
+                        callbacks.run('on_fit_epoch_end', list(loss) + list(results) + lr, epoch, best_fitness) ### huaxing deleted: , fi
 
-        callbacks.run('on_train_end', last, best, plots, epoch, results)
-        LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
+        # callbacks.run('on_train_end', last, best, epoch)
+        # LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
 
     torch.cuda.empty_cache()
     return results
