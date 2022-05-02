@@ -1,5 +1,5 @@
-# This is a multi-task learning based on YOLOv5 algorithm. We added counting regression head to replace the original detection head of YOLOv5.
-# Below is the overview of teh architecture:
+## This is a multi-task learning based on YOLOv5 algorithm. We added counting regression head to replace the original detection head of YOLOv5.
+Below is the overview of teh architecture:
                  from  n    params  module                                  arguments                     
   0                -1  1      3520  models.common.Conv                      [3, 32, 6, 2, 2]              
   1                -1  1     18560  models.common.Conv                      [32, 64, 3, 2]                
