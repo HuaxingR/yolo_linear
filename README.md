@@ -1,4 +1,5 @@
-## This is a multi-task learning based on YOLOv5 algorithm. We added counting regression head to replace the original detection head of YOLOv5.
+## This is a multi-task learning based on YOLOv5 algorithm. We added counting regression head to replace the original detection head of YOLOv5. 
+### We flattened the output of SPPF module and added linear layer after SPPF module. Then we used MSEloss to find the loss of the counting number of objects.
 Below is the overview of teh architecture:
                  from  n    params  module                                  arguments                     
   0                -1  1      3520  models.common.Conv                      [3, 32, 6, 2, 2]              
@@ -13,9 +14,6 @@ Below is the overview of teh architecture:
   9                -1  1    656896  models.common.SPPF                      [512, 512, 5]                 
  10                -1  1    524289  torch.nn.modules.linear.Linear          [524288, 1]                   
 Model Summary: 152 layers, 4695745 parameters, 4695745 gradients
-
-## We flattened the output of SPPF module and added linear layer after SPPF module. <br />
-## Then we used MSEloss to find the loss of the counting number of objects.
 
 
 **To use the code, some changes are needed as shown below:**
